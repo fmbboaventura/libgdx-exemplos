@@ -7,6 +7,8 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.math.Rectangle;
 
 public class Link {
@@ -34,7 +36,15 @@ public class Link {
 	 * ele está encarando.
 	 */
 	
-	public Link(){
+	TiledMapTileLayer collisionLayer;
+	// Camada onde se encontram os tiles que o personagem deve colidir.
+	
+	String blocked;
+	
+	public Link(TiledMapTileLayer collisionLayer){
+		this.collisionLayer = collisionLayer;
+		blocked = "blocked";
+		
 		sheet = new Texture(Gdx.files.internal("res"+File.separator+"link.png"));
 		// Carrega o arquivo de imagem com os frames.
 		
@@ -73,10 +83,10 @@ public class Link {
 		 * personagem parado em uma direção.
 		 */
 		
-		walkLeft = new Animation(0.06f, left);
-		walkRight = new Animation(0.06f, right);
-		walkUp = new Animation(0.06f, up);
-		walkDown = new Animation(0.06f, down);
+		walkLeft = new Animation(0.07f, left);
+		walkRight = new Animation(0.07f, right);
+		walkUp = new Animation(0.07f, up);
+		walkDown = new Animation(0.07f, down);
 		/* Criando as animações. O primeiro parâmetro é o tempo
 		 * que cada frame ficará na tela em segundos.*/
 		stateTime = 0;
@@ -111,6 +121,9 @@ public class Link {
 	}
 	
 	public void move(){
+		int x = (int) getX(), y = (int) getY();
+		// Guardando as coordenadas iniciais
+		
 		if(Gdx.input.isKeyPressed(Keys.A)){
 			// Checa se a tecla foi pressionada
 			
@@ -158,6 +171,22 @@ public class Link {
 		
 		moving = (left || right) || (up || down);
 		// Verifica se o presonagem está se movendo em qualquer direção
+		
+		/* Checa se a celula nas seguntes coordenadas está bloqueada.
+		 * O método getCell() retorna a célula nas coordenadas dadas, 
+		 * como uma matriz. Existe uma celula para cada tile. Temos um
+		 * Tile Map de 40x40 tiles e cada tile mede 16x16 pixels. A 
+		 * posição do tile onde o personagem se encontra é dada pela 
+		 * posição x e y do personagem dividida por 16.
+		 */
+		if(isCellBlocked(collisionLayer.getCell(((int)(getX()+12)/16), ((int)(getY()+12)/16)))){
+			/* Caso a célula esteja bloqueada, o personagem volta para
+			 * a posição anterior. Isso acontece antes do personagem ser
+			 * desenhado na tela.
+			 */
+			form.x = x;
+			form.y = y;
+		}
 	}
 	
 	public float getX(){
@@ -166,5 +195,11 @@ public class Link {
 	
 	public float getY(){
 		return form.y;
+	}
+	
+	public boolean isCellBlocked(Cell cell){
+		if(cell == null) return false;
+		return cell.getTile().getProperties().containsKey(blocked);
+		// Retorna true se a celula dada comtém a chave de bloqueio definida
 	}
 }
